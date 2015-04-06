@@ -22,7 +22,6 @@ page_not_found.php
 robots_example.txt
 test.php
 vbv_learn_more.html
-
+/admin21/*
 
 !/admin21/feed_view.php
-/admin21/
