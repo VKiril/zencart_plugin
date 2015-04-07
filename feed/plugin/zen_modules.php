@@ -58,25 +58,6 @@ class FeedConnector implements FeedPlugin {
      */
     public function getShopConfig()
     {
-        /*$currency = null;
-        $temp1 = array();
-        $temp2 = array();
-        $oReturn = new stdClass();
-		//$availability = $this->config->getShopAvailabilityConfig();
-		$availability = $this->config->__getShopAvailabilityConfig();
-        foreach ($availability->values as $item) {
-            $temp2[$item->key] = $item->title ;
-        }
-        $oReturn->availability = $temp2 ;
-        $oReturn->language = $this->config->getShopLanguageConfig();
-        $currency = $this->config->getShopCurrencyConfig();
-        foreach ($currency->values as $key=>$value) {
-            $temp1[$value->key] = $value->title;
-        }
-        $oReturn->currency = $temp1;
-
-        return $oReturn;*/
-
         $shopConfig = new stdClass();
         $shopConfig->language = $this->config->getShopLanguageConfig();
         $shopConfig->currency = $this->config->getShopCurrencyConfig();
@@ -119,22 +100,21 @@ class FeedConnector implements FeedPlugin {
             echo 'File Error';
             exit();
         }
-
         fputcsv($csv_file, array_keys($fieldMap), ';', '"');
         $shopConfig = $this->getShopConfig();
         do{
-
             $products   = $this->config->getProducts($limit, $offset,$queryParameters);
             $attributes = $this->config->getProductsAttr();
             $count = 0;
 
             foreach ($products as $product) {
-                $this->config->uploadCSVfileWithCombinations($csv_file,$product,$attributes,$fieldMap, $shopConfig,$queryParameters, null);
+                $this->config->uploadCSVfileWithCombinations($csv_file,$product,$attributes,$fieldMap,$queryParameters, null);
                 flush();
-
                 ++$count;
             }
+
             $offset += $limit;
+            //var_dump($limit);
         } while ($count == $limit);
 
         fclose($csv_file);
@@ -177,16 +157,7 @@ class FeedConnector implements FeedPlugin {
      */
     public function getOrders(int $deltaTimestamp)
     {
-        /*die('test');
-        $var = $this->config->getOrdersProducts(1,9);
-        $products = '';
-        foreach ($var as $product) {
-            //$tax = zen_get_tax_rate($product['tax_class_id'], $config->taxZone['zone_country_id'], $config->taxZone['zone_id']);
-            $price = $product['product']['price'];
-            $quantity = $product['product']['qty'] ;
-            $products .= $product['attributes']['ModelOwn']."=".$price."=".$quantity.";";
-        }
-        var_dump($products, $var);die;*/
+
     }
 
     /**
@@ -248,7 +219,7 @@ class FeedConnector implements FeedPlugin {
 
         $shopConfig = $this->getShopConfig();
         $product = $product[0];
-        $result = $this->config->uploadCSVfileWithCombinations(null,$product,$attributes,$fieldMap, $shopConfig,$queryParameters, $id);
+        $result = $this->config->uploadCSVfileWithCombinations(null, $product, $attributes, $fieldMap, $queryParameters, $id);
         print_r($result);
     }
 

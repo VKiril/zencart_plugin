@@ -101,10 +101,11 @@ class FeedConfig {
 		"AUTO_MANUFACTURER" => "auto_manufacturer"
 	);
 
-	public function __construct()
-	{
-		$this->_initParameters();
-	}
+
+    public function __construct()
+    {
+        $this->_initParameters();
+    }
 
     /**
      * update database
@@ -192,7 +193,10 @@ class FeedConfig {
 		return $rez;
 	}
 
-	public function getShopLanguageConfig()
+    /**
+     * @return stdClass
+     */
+    public function getShopLanguageConfig()
 	{
 		$oConfig = new stdClass();
 		$aLanguages = $this->getLanguagesArray();
@@ -234,7 +238,10 @@ class FeedConfig {
         return $stdConfig;
     }
 
-	public function getShopAvailabilityConfig()
+    /**
+     * @return stdClass
+     */
+    public function getShopAvailabilityConfig()
 	{
 		$oConfig = new stdClass();
 		$aAvailabilities[] = array('id' => '1', 'title' => 'No export inactive and with quantity = 0 products');
@@ -253,7 +260,10 @@ class FeedConfig {
 		return $oConfig;
 	}
 
-	public function getShopCurrencyConfig()
+    /**
+     * @return stdClass
+     */
+    public function getShopCurrencyConfig()
 	{
 		$oConfig = new stdClass();
 		$aCurrencies =  $this->getCurrencyArray();
@@ -269,7 +279,10 @@ class FeedConfig {
 		return $oConfig;
 	}
 
-	public function getQueryFields()
+    /**
+     * @return array
+     */
+    public function getQueryFields()
 	{
 		return array(
 			'id' => 'id',
@@ -294,7 +307,15 @@ class FeedConfig {
 		);
 	}
 
-    public function getProducts($limit=null, $offset=null,$queryParameters,$id = null){
+    /**
+     * @param null $limit
+     * @param null $offset
+     * @param $queryParameters
+     * @param null $id
+     * @return array
+     */
+    public function getProducts($limit = null, $offset = null, $queryParameters, $id = null)
+    {
         $db = $GLOBALS['db'];
         $select = '
                 SELECT
@@ -313,10 +334,6 @@ class FeedConfig {
                     p.products_status as products_status
 
         ';
-        /*$select  = '
-                SELECT
-                    *
-        ';*/
         $from = ' FROM
                     '.TABLE_PRODUCTS.' p
                   inner join '.TABLE_PRODUCTS_DESCRIPTION.' pd on p.products_id=pd.products_id
@@ -328,8 +345,10 @@ class FeedConfig {
             0 => 'out of stock',
             1 => 'in stock'
          */
-        if($queryParameters->status ) {
-            switch ($queryParameters->status) {
+        if($queryParameters->status )
+        {
+            switch ($queryParameters->status)
+            {
 
                 case 1:
                     $where = '
@@ -348,23 +367,27 @@ class FeedConfig {
                     ';
             }
         }
-        if($queryParameters->language){
+        if($id != null)
+        {
+            $where = ' and p.products_id ='.$id;
+        }
+        if($queryParameters->language)
+        {
             $where .= ' and pd.language_id = '.$this->locale[$queryParameters->language];
 
         }
         $dimensions = '';
-        if($limit != null and $offset != null ){
+        if($limit != null and $offset != null or $limit != null and $offset == 0)
+        {
             $dimensions = ' limit '.$limit.'  offset '.$offset;
         }
-        if($id != null){
-            $where = ' and p.products_id ='.$id;
-        }
-
+        //var_dump($limit,$offset,$dimensions);die;
         $query  = $select.$from.$where.$dimensions;
         $response = $this->dataFetch($db->Execute($query), true);
         $temp = array();
 
-        foreach ($response as $item) {
+        foreach ($response as $item)
+        {
             $temp[] = $item['products_id'];
         }
         $this->productsId = implode(',',$temp);
@@ -374,16 +397,12 @@ class FeedConfig {
     }
 
 
-    public function getProductsAttr(){
-        /*$var = $this->getOrdersProducts(1,9);
-        $products = '';
-        foreach ($var as $product) {
-            //$tax = zen_get_tax_rate($product['tax_class_id'], $config->taxZone['zone_country_id'], $config->taxZone['zone_id']);
-            $price = $product['product']['price'];
-            $quantity = $product['product']['qty'] ;
-            $products .= $product['attributes']['ModelOwn']."=".$price."=".$quantity.";";
-        }
-        var_dump($products, $var);die;*/
+    /**
+     * @return array
+     */
+    public function getProductsAttr()
+    {
+
         $db = $GLOBALS['db'];
         $query  = '
                     select
@@ -400,58 +419,68 @@ class FeedConfig {
 
         ';
 
-        /*$query  = '
-                    select
-                        *
-                    from '.TABLE_PRODUCTS_ATTRIBUTES.' pa
-                    where pa.products_id in ('.$this->productsId.')
-
-        ';*/
-
         $response = $this->dataFetch($db->Execute($query), true);
 
         $lastProductId = null;
         $idList = array();
         $temp = array();
         //make from a lot of arrays one single array which fields will be arrays with all possible data
-        foreach ($response[0] as $key=>$value) {
+        foreach ($response[0] as $key=>$value)
+        {
             $temp[$key] = array();
         }
 
-        foreach ($response as $item) {
-            if($lastProductId != $item['products_id'] ){
+        foreach ($response as $item)
+        {
+            if($lastProductId != $item['products_id'] )
+            {
                 $idList[] = $item['products_id'];
             }
             $lastProductId = $item['products_id'];
         }
-        foreach ($idList as $item) {
+
+        foreach ($idList as $item)
+        {
             foreach ($response as $attribute) {
-                if($item == $attribute['products_id']){
-                    foreach ($attribute as $key=>$value) {
+                if($item == $attribute['products_id'])
+                {
+                    foreach ($attribute as $key=>$value)
+                    {
                         $temp[$item][$key][] = $value;
                     }
                 }
             }
             $temp[$item]['options_list'] = array();
         }
-        foreach ($temp as $key=>$item) {
-            if(empty($item)){
+
+        foreach ($temp as $key=>$item)
+        {
+            if(empty($item))
+            {
                 unset($temp[$key]);
             }
         }
+
         $option_var = null;
         $option_array = array();
-        foreach ($temp as $key=>$item) {
-            foreach ($item['options_id'] as $element) {
-                if($element != $option_var){
+
+        foreach ($temp as $key=>$item)
+        {
+            foreach ($item['options_id'] as $element)
+            {
+                if($element != $option_var)
+                {
                     $option_array[$key][] =  (int) $element ;
                 }
                 $option_var = $element;
             }
             $buff = array();
-            foreach ($option_array[$key] as $value) {
-                foreach ($temp[$key]['options_id'] as $key2 => $element) {
-                    if($value == $element) {
+            foreach ($option_array[$key] as $value)
+            {
+                foreach ($temp[$key]['options_id'] as $key2 => $element)
+                {
+                    if($value == $element)
+                    {
                         $buff[$value][$key2] = $temp[$key]['options_values_id'][$key2];
                     }
                 }
@@ -465,20 +494,28 @@ class FeedConfig {
 
 
 	//function for checking if column products_id exist in tables $table
-	protected function _checkTables($tables)
+    /**
+     * @param $tables
+     */
+    protected function _checkTables($tables)
 	{
 		$db = $GLOBALS['db'];
 		$output = array();
 
-		foreach($tables as $key => $table) {
-			if($table != 'N' && $table !== null) {
+		foreach($tables as $key => $table)
+        {
+			if($table != 'N' && $table !== null)
+            {
 				$tables[$key] = "'".strtok($table, ';')."'";
-			} else {
+			}
+            else
+            {
 				unset ($tables[$key]);
 			}
 		}
 
-		if($tables) {
+		if($tables)
+        {
 			$query = ("
 				SELECT DISTINCT c.column_name, c.table_name FROM information_schema.columns AS c
 				WHERE table_name IN ( ".implode(',', $tables)." ) AND TABLE_SCHEMA = '$db->database'
@@ -486,15 +523,20 @@ class FeedConfig {
 
 			$result = $db->Execute($query);
 
-			while(!$result->EOF) {
+			while(!$result->EOF)
+            {
 				$output[$result->fields['table_name']][] = $result->fields['column_name'];
 				$result->MoveNext();
 			}
 
-			foreach($output as $key_1 => $inspector) {
-				if(!in_array('products_id', $inspector)) {
-					foreach($this->parameters as $key_2 => $parameter) {
-						if(strtok($parameter, ';') == $key_1) {
+			foreach($output as $key_1 => $inspector)
+            {
+				if(!in_array('products_id', $inspector))
+                {
+					foreach($this->parameters as $key_2 => $parameter)
+                    {
+						if(strtok($parameter, ';') == $key_1)
+                        {
 							unset($this->parameters[$key_2]);
 						}
 					}
@@ -503,17 +545,29 @@ class FeedConfig {
 		}
 	}
 
+    /**
+     * @param $index
+     * @param $attributes
+     * @param $options
+     * @param $product_id
+     * @return array
+     */
     public function generate($index, $attributes, $options, $product_id)
     {
         $attributes[$this->productAttributes[$product_id][$index]['products_attributes_id']] = $this->productAttributes[$product_id][$index]['products_attributes_id'];
         $options[$this->productAttributes[$product_id][$index]['options_id']] = $this->productAttributes[$product_id][$index]['options_id'];
         $withRequired = array_diff($this->productAttributes[$product_id]['required'], $options);
-        if (empty($withRequired)) {
+        if (empty($withRequired))
+        {
             $combinations[] = $attributes;
-        } else $combinations = array();
+        }
+        else
+            $combinations = array();
 
-        for ($i = $index + 1; $i < count($this->productAttributes[$product_id])-1; $i++) {
-            if ($this->productAttributes[$product_id][$index]['options_id'] != $this->productAttributes[$product_id][$i]['options_id']) {
+        for ($i = $index + 1; $i < count($this->productAttributes[$product_id])-1; $i++)
+        {
+            if ($this->productAttributes[$product_id][$index]['options_id'] != $this->productAttributes[$product_id][$i]['options_id'])
+            {
                 $combinations = array_merge($combinations, $this->generate($i, $attributes, $options, $product_id));
             }
         }
@@ -521,7 +575,10 @@ class FeedConfig {
         return $combinations;
     }
 
-
+    /**
+     * @param array $ids
+     * @param array $products_ids
+     */
     public function getProductsAttributes($ids = array(), $products_ids = array())
     {
         $db = $GLOBALS['db'];
@@ -550,12 +607,14 @@ class FeedConfig {
             ON (pa.options_values_id = pov.products_options_values_id)
         ";
 
-        if($ids && $products_ids) {
+        if($ids && $products_ids)
+        {
             $query .= ' WHERE pa.products_attributes_id IN ('.implode(',', $ids).')
                         AND pa.products_id IN ('.implode(',', $products_ids).')';
         }
 
-		if($products_ids && !$ids) {
+		if($products_ids && !$ids)
+        {
 			$query .= ' WHERE pa.products_id IN ('.implode(',', $products_ids).')';
 		}
 
@@ -563,10 +622,13 @@ class FeedConfig {
 
         $pAttributes = $this->dataFetch($resource);
 
-        if (!$pAttributes) {
+        if (!$pAttributes)
+        {
             $this->productAttributes = array();
-        } else {
-            foreach ($pAttributes as $attribute) {
+        } else
+        {
+            foreach ($pAttributes as $attribute)
+            {
                 $this->productAttributes[$attribute['id']][$attribute['products_attributes_id']] = $attribute;
             }
         }
@@ -574,7 +636,7 @@ class FeedConfig {
     }
 
 	//get and analyze the shipping parameters and set priority of fields
-	public function getFeedifyShippingParameters()
+    public function getFeedifyShippingParameters()
 	{
 		$db = $GLOBALS['db'];		//database
 
@@ -586,7 +648,8 @@ class FeedConfig {
 
 		$result = $this->dataFetch($db->Execute($query));
 
-		foreach($result as $key => $item) {
+		foreach($result as $key => $item)
+        {
 			if(strstr($item['configuration_key'], '1') && $item['configuration_value'] != 'N' && $item['configuration_value'] !== null) {
 				$this->defaultsShipping[$item['configuration_key']] = $item['configuration_value'];
 			}
@@ -602,6 +665,11 @@ class FeedConfig {
 		}
 	}
 
+    /**
+     * @param $resource
+     * @param bool $setIds
+     * @return array
+     */
     public function dataFetch($resource, $setIds = false)
     {
         $output = array(); //if is set parameter $setIds function store ids of fetched data to $this->productsIds
@@ -1078,7 +1146,18 @@ class FeedConfig {
         return $temp;
     }
 
-    public function uploadCSVfileWithCombinations($csv_file,$product,$attributes,$fieldMap, $shopConfig,$queryParameters,$info = null){
+    /**
+     * @param $csv_file
+     * @param $product
+     * @param $attributes
+     * @param $fieldMap
+     * @param $shopConfig
+     * @param $queryParameters
+     * @param null $info
+     * @return array
+     */
+    public function uploadCSVfileWithCombinations($csv_file, $product, $attributes, $fieldMap, $queryParameters, $info = null)
+    {
         $allCombinations = $this->allCombinations($attributes[$product['products_id']]['options_list']);
         $row = array();
         if($info != null){
@@ -1086,7 +1165,7 @@ class FeedConfig {
                 foreach($fieldMap as $key => $field) {
                     $modelOwn = $this->getModelOwn($product, $combinations);
                     if($info == $modelOwn){
-                        $row[$key] = $this->getRowElements($field, $attributes, $product, $combinations, $shopConfig,$queryParameters);
+                        $row[$key] = $this->getRowElements($field, $attributes, $product, $combinations, $queryParameters);
                     }
                 }
                 return $row ;
@@ -1096,14 +1175,16 @@ class FeedConfig {
         if(array_key_exists($product['products_id'],$attributes) ){
             foreach ($allCombinations as $combinations) {
                 foreach($fieldMap as $key => $field) {
-                    $row[$key] = $this->getRowElements($field, $attributes, $product, $combinations, $shopConfig,$queryParameters);
+                    $row[$key] = $this->getRowElements($field, $attributes, $product, $combinations,$queryParameters);
                 }
+                //var_dump($row);
                 fputcsv($csv_file, $row , ';', '"');
             }
         } else {
             foreach($fieldMap as $key => $field) {
                 $row[$key] = $this->getRowElements($field, null, $product, null, $queryParameters);
             }
+            //var_dump($row);
             fputcsv($csv_file, $row, ';', '"');
         }
     }
@@ -1117,168 +1198,200 @@ class FeedConfig {
      * @param $queryParameters
      * @return string
      */
-    public function getRowElements($field, $attributes = null, $product, $combinations = null, $shopConfig, $queryParameters)
+    public function getRowElements($field, $attributes = null, $product, $combinations = null,  $queryParameters)
     {
-
+        $result = '';
         switch($field){
-            case 'ModelOwn'              : {
-                return $this->getModelOwn($product, $combinations);
-            }
-            case 'Name'                  : {
-                return $product['products_name'];
-            }
-            case 'Subtitle'              : {
-                return $this->getSubtitle($product, $combinations, $attributes);
-            }
-            case 'Description'           : {
-                return $product['products_description'];
-            }
-            case 'AdditionalInfo'        : {
-                return 'http://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).
+            case 'ModelOwn'              :
+                $result = $this->getModelOwn($product, $combinations);
+            break;
+            case 'Name'                  :
+                $result = $product['products_name'];
+            break;
+            case 'Subtitle'              :
+                $result = $this->getSubtitle($product, $combinations, $attributes);
+            break;
+            case 'Description'           :
+                $result = $product['products_description'];
+            break;
+            case 'AdditionalInfo'        :
+                $result = 'http://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).
                 '/index.php?main_page=product_info&products_id='.$product['products_id'];
-            }
-            case 'Image'                 : {
-                return 'http://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).
+            break;
+            case 'Image'                 :
+                $result = 'http://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).
                 "/images/".$product['products_image'];
-            }
-            case 'Manufacturer'          : {
-                return $this->manufactures[$product['manufacturers_id']];
-            }
-            case 'Model'                 : {
-                return $product['products_model'];
-            }
-            case 'Category'              : {
-                return $this->getCategory($product['products_id']);
-            }
-            case 'CategoriesGoogle'      : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_GOOGLE');
+            break;
+            case 'Manufacturer'          :
+                $result = $this->manufactures[$product['manufacturers_id']];
+            break;
+            case 'Model'                 :
+                $result = $product['products_model'];
+            break;
+            case 'Category'              :
+                $result = $this->getCategory($product['products_id']);
+            break;
+            case 'CategoriesGoogle'      :
+                $result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_GOOGLE');
                 //return $this->getCategoriesGoogle($product,$combinations,$attributes);
-            }
-            case 'CategoriesYatego'      : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_YATEGOO');
+            break;
+            case 'CategoriesYatego'      :
+                $result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_YATEGOO');
                 //return $this->getCategoriesYatego($product,$combinations,$attributes);
-            }
-            case 'ProductsEAN'           : {
+            break;
+            case 'ProductsEAN'           :
 
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_EAN');
+                $result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_EAN');
                 //return $this->getProductsEAN($product,$combinations,$attributes);
-            }
-            case 'ProductsISBN'          : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_ISBN');
-                //return $this->getProductsISBN($product,$combinations,$attributes);
-            }
-            case 'Productsprice_brut'    : {
-                return $this->getProductsPriceBrut($product,$combinations,$attributes);
+            break;
+            case 'ProductsISBN'          :
+                //$result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_ISBN');
+                return $this->getProductsISBN($product,$combinations,$attributes);
+            break;
+            case 'Productsprice_brut'    :
+                $result = $this->getProductsPriceBrut($product,$combinations,$attributes);
                 //
-            }
-            case 'Productspecial'        : {
-                return $this->getProductSpecial($product);
+            break;
+            case 'Productspecial'        :
+                $result = $this->getProductSpecial($product);
                 //
-            }
-            case 'Productsprice_uvp'     : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_UVP');
-                //return $this->getProductsPriceUVP($product,$combinations,$attributes);
-            }
-            case 'BasePrice'             : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_BASE_PRICE');
-                //return $this->getBasePrice($product,$combinations,$attributes);
-            }
-            case 'BaseUnit'              : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_BASE_UNIT');
-                //return $this->getBaseUnit($product,$combinations,$attributes);
-            }
-            case 'Productstax'           : {
-                return $this->getProductTax($product);
+            break;
+            case 'Productsprice_uvp'     :
+                //$result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_UVP');
+                return $this->getProductsPriceUVP($product,$combinations,$attributes);
+            break;
+            case 'BasePrice'             :
+                //$result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_BASE_PRICE');
+                return $this->getBasePrice($product,$combinations,$attributes);
+            break;
+            case 'BaseUnit'              :
+                //$result =  $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_BASE_UNIT');
+                return $this->getBaseUnit($product,$combinations,$attributes);
+            break;
+            case 'Productstax'           :
+                $result =  $this->getProductTax($product);
                 //
-            }
-            case 'ProductsVariant'       : {
-                return $this->getProductVariants($attributes,$product,$combinations);
+            break;
+            case 'ProductsVariant'       :
+                $result = $this->getProductVariants($attributes,$product,$combinations);
                 //
-            }
-            case 'Currency'              : {
-                return $queryParameters->currency ? $queryParameters->currency: 'USD';
+            break;
+            case 'Currency'              :
+                $result =  $queryParameters->currency ? $queryParameters->currency: 'USD';
                 //
-            }
-            case 'Quantity'              : {
-                return $product['products_quantity'];
+            break;
+            case 'Quantity'              :
+                $result =  $product['products_quantity'];
                 //
-            }
-            case 'Weight'                : {
-                return $this->getWeight($product,$combinations,$attributes);
+            break;
+            case 'Weight'                :
+                $result =  $this->getWeight($product,$combinations,$attributes);
                 //
-            }
-            case 'AvailabilityTxt'       : {
-                return $this->getAvailability($product);
+            break;
+            case 'AvailabilityTxt'       :
+                $result =  $this->getAvailability($product);
                 //
-            }
-            case 'Condition'             : {
-                return $this->getCondition();
+            break;
+            case 'Condition'             :
+                $result =  $this->getCondition();
                 //
-            }
-            case 'Coupon'                : {
-                return $this->getElementWith_3_Cases($product,$combinations,$attributes,'FIELD_COUPON');
+            break;
+            case 'Coupon'                :
+                $result =  $this->getElementWith_3_Cases($product, $combinations, $attributes, 'FIELD_COUPON');
                 //return $this->getCoupon($product,$combinations,$attributes);
-            }
-            case 'Gender'                : {
-                return $this->getGender($product,$combinations,$attributes);
-            }
-            case 'Size'                  : {
-               return $this->getSize($product,$combinations,$attributes);
-            }
-            case 'Color'                 : {
-                return $this->getColor($product,$combinations,$attributes);
-            }
-            case 'Material'              : {
-                return $this->getMaterial($product,$combinations,$attributes);
-            }
-            case 'Packet_size'           : {
-               return $this->getPacketSize($product,$combinations,$attributes);
-            }
-            case 'DeliveryTime'          : {
-               return $this->getDeliveryTime($product,$combinations,$attributes);
-            }
-            case 'Shipping'              : {
-                return $this->getShipping($product,$combinations,$attributes);
-            }
-            case 'ShippingAddition'      : {
-                return $this->getShippingAddition($product);
-            }
-            case 'shipping_paypal_ost'   : {
-                return $this->getShippingPaypalCost($product);
-            }
-            case 'shipping_cod'          : {
+            break;
+            case 'Gender'                :
+                $result =  $this->getElementWith_3_Cases($product, $combinations, $attributes, 'FIELD_GENDER');
+                //return $this->getGender($product,$combinations,$attributes);
+            break;
+            case 'Size'                  :
+                $result =  $this->getElementWith_3_Cases($product, $combinations, $attributes, 'FIELD_SIZE');
+                //return $this->getSize($product,$combinations,$attributes);
+            break;
+            case 'Color'                 :
+                $result =  $this->getElementWith_3_Cases($product, $combinations, $attributes, 'FIELD_COLOR');
+                //return $this->getColor($product, $combinations, $attributes);
+            break;
+            case 'Material'              :
+                //$result = $result =  $this->getElementWith_3_Cases($product, $combinations, $attributes, 'ATTRIBUTES_MATERIAL') ;
+                return $this->getMaterial($product, $combinations, $attributes) ;
+            break;
+            case 'Packet_size'           :
+               $result =  $this->getPacketSize($product,$combinations,$attributes);
+                //
+            break;
+            case 'DeliveryTime'          :
+               $result =  $this->getDeliveryTime($product,$combinations,$attributes);
+                //
+            break;
+            case 'Shipping'              :
+                $result =  $this->getElementWith_3_Cases($product, $combinations, $attributes, 'FIELD_SHIPPING_COST');
+                //return $this->getShipping($product,$combinations,$attributes);
+            break;
+            case 'ShippingAddition'      :
+                $result =  $this->getElementWith_2_Cases($product, 'SHIPPING_ADDITION');
+                // $this->getShippingAddition($product);
+            break;
+            case 'shipping_paypal_ost'   :
+                $result =  $this->getElementWith_2_Cases($product, 'SHIPPING_PAYPAL_OST');
+                //return $this->getShippingPaypalCost($product);
+            break;
+            case 'shipping_cod'          :
+                //$result =  $this->getElementWith_2_Cases($product, 'SHIPPING_COD');
                 return $this->getShippingCode($product);
-            }
-            case 'shipping_credit'       : {
-                return $this->getShippingCredit($product);
-            }
-            case 'shipping_paypal'       : {
-                return $this->getShippingPaypal($product);
-            }
-            case 'shipping_transfer'     : {
-                return $this->getShippingTransfer($product);
-            }
-            case 'shipping_debit'        : {
-                return $this->getShippingDebit($product);
-            }
-            case 'shipping_account'      : {
-                return $this->getShippingAccount($product);
-            }
-            case 'shipping_moneybookers' : {
-                return $this->getShippingMoneybookers($product);
-            }
-            case 'shipping_giropay'      : {
-                return $this->getShippingGiropay($product);
-            }
-            case 'shipping_click_buy'    : {
-                return $this->getShippingClickBy($product);
-            }
-            case 'shipping_comment'      : {
-                return $this->getShippingComment();
+            break;
+            case 'shipping_credit'       :
+                $result =  $this->getElementWith_2_Cases($product, 'SHIPPING_CREDIT');
+                //return $this->getShippingCredit($product);
+            break;
+            case 'shipping_paypal'       :
+                $result =  $this->getElementWith_2_Cases($product, 'SHIPPING_PAYPAL');
+                //return $this->getShippingPaypal($product);
+            break;
+            case 'shipping_transfer'     :
+                $result =  $this->getShippingTransfer($product, 'SHIPPING_TRANSFER');
+                //return $this->getShippingTransfer($product);
+            break;
+            case 'shipping_debit'        :
+                $result =  $this->getShippingDebit($product, 'SHIPPING_DEBIT');
+                //return $this->getShippingDebit($product);
+            break;
+            case 'shipping_account'      :
+                $result =  $this->getShippingAccount($product, 'SHIPPING_ACCOUNT');
+                //return $this->getShippingAccount($product);
+            break;
+            case 'shipping_moneybookers' :
+                $result =  $this->getShippingMoneybookers($product, 'SHIPPING_MONEYBOOKERS');
+                //return $this->getShippingMoneybookers($product);
+            break;
+            case 'shipping_giropay'      :
+                $result =  $this->getShippingGiropay($product, 'SHIPPING_GIROPAY');
+                //return $this->getShippingGiropay($product);
+            break;
+            case 'shipping_click_buy'    :
+                $result =  $this->getShippingClickBy($product, 'SHIPPING_CLICK_BUY');
+                //return $this->getShippingClickBy($product);
+            break;
+            case 'shipping_comment'      :
+                $result =  $this->feedData['FEED_SHIPPING_COMMENT'];
+        }
+
+        return $result ;
+
+    }
+    public function getElementWith_2_Cases($product, $case){
+        if($this->feedData['FEED_'.$case.'_1'] != 'N' and is_string($this->feedData['FEED_'.$case.'_1'])){
+            $temp = explode(';',$this->feedData['FEED_'.$case.'_1']);
+            $temp = $temp[1] ;
+            if($product[$temp]){
+                return  $product[$temp] ;
             }
         }
+        if ($this->feedData['FEED_'.$case.'_2'] != '' ){
+            return $this->feedData['FEED_'.$case.'_2'];
+        }
+        return '';
     }
-
 
     public function getElementWith_3_Cases($product, $combinations, $attributes, $case){
         if($this->feedData['FEED_'.$case.'_1'] != 'N' and is_string($this->feedData['FEED_'.$case.'_1'])){
@@ -1873,12 +1986,6 @@ class FeedConfig {
         return '';
     }
 
-    public function getShippingComment(){
-        if(isset($this->feedData['FEED_SHIPPING_COMMENT'])){
-            return $this->feedData['FEED_SHIPPING_COMMENT'];
-        }
-        return '';
-    }
 
     public function getShippingClickBy($product){
         if($this->feedData['FEED_SHIPPING_CLICK_BUY_1'] != 'N' and is_string($this->feedData['FEED_SHIPPING_CLICK_BUY_1'])){
@@ -1965,7 +2072,7 @@ class FeedConfig {
         return  implode('|',$temp);
     }
 
-    public function getModelOwn($product,$combinations=null){
+    public function getModelOwn($product,$combinations){
         $temp = $product['products_id'];
         $buff = array();
         if($combinations){

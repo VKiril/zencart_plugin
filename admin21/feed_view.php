@@ -9,10 +9,10 @@ $feedifyConfig = new FeedConfig();
 
 
 $attributesToDisplay = array(
-    "FEED_ATTRIBUTES_COLOR" => "• Color:",
-    "FEED_ATTRIBUTES_SIZE" => "• Size:",
-    "FEED_ATTRIBUTES_GENDER" => "• Gender:",
-    "FEED_ATTRIBUTES_MATERIAL" => "• Material:",
+    "FEED_FIELDS_COLOR" => "• Color:",
+    "FEED_FIELDS_SIZE" => "• Size:",
+    "FEED_FIELDS_GENDER" => "• Gender:",
+    "FEED_FIELDS_MATERIAL" => "• Material:",
 );
 
 $dbProductsColumns = $feedifyConfig->getDatabaseColumns("'".TABLE_PRODUCTS."', '".TABLE_PRODUCTS_DESCRIPTION."', '".TABLE_CATEGORIES."'");
@@ -91,7 +91,7 @@ if(isset($_POST['FEED_USER']) && isset($_POST['FEED_PASS']) && isset($_POST['FEE
             // -->
         </script>
     </head>
-    <body onload="init()" style="background-color: #e5edf5">
+    <body onload="init()" style="background-image: url('../images/backgroung/back-gnd.jpg')">
     <!-- header //-->
     <?php require(DIR_WS_INCLUDES . 'header.php'); ?>
     <!-- header_eof //-->
@@ -270,12 +270,12 @@ if(isset($_POST['FEED_USER']) && isset($_POST['FEED_PASS']) && isset($_POST['FEE
         <tr>
             <td><?php echo $item ?></td>
             <td>
-                <select name="<?php echo str_replace( "ATTRIBUTES","FIELD",$key ).'_1' ?>"  style="width: 130px; margin-left: 2px">
-                    <option value="N" <?php if ($feedifyConfig->getConfig(str_replace( "ATTRIBUTES","FIELD",$key ).'_1') == 'N') echo "selected"; ?> >-- empty --</option>
+                <select name="<?php echo $key.'_1' ?>"  style="width: 130px; margin-left: 2px">
+                    <option value="N" <?php if ($feedifyConfig->getConfig($key.'_1') == 'N') echo "selected"; ?> >-- empty --</option>
                     <?php
                     foreach($dbProductsColumns as $key_2=>$column) {
                         echo '<option value='.$column['table_name'].';'.$column['column_name'];
-                        if ($feedifyConfig->getConfig(str_replace( "ATTRIBUTES","FIELD",$key ).'_1') == $column['table_name'].';'.$column['column_name']) {
+                        if ($feedifyConfig->getConfig($key.'_1') == $column['table_name'].';'.$column['column_name']) {
                             echo " selected ";
                         }
                         echo'>'.$column['column_name'].' ('.$column['table_name'].')</option>';
@@ -285,11 +285,11 @@ if(isset($_POST['FEED_USER']) && isset($_POST['FEED_PASS']) && isset($_POST['FEE
             </td>
             <td> or
                 <select name="<?php echo $key.'_2';?>"  style="width: 130px; margin-left: 2px" >
-                    <option value="N" <?php if ($feedifyConfig->getConfig(str_replace( "ATTRIBUTES","FIELD",$key ).'_2') == 'N') echo "selected"; ?> >-- empty --</option>
+                    <option value="N" <?php if ($feedifyConfig->getConfig($key.'_2') == 'N') echo "selected"; ?> >-- empty --</option>
                     <?php
                     foreach($attributes as $attribute) {
                         echo '<option value='.$attribute['products_options_id'];
-                        if ($feedifyConfig->getConfig(str_replace( "ATTRIBUTES","FIELD",$key ).'_2') == $attribute['products_options_id']) {
+                        if ($feedifyConfig->getConfig($key.'_2') == $attribute['products_options_id']) {
                             echo " selected ";
                         }
                         echo'>'.$attribute['products_options_name'].'</option>';
@@ -297,7 +297,7 @@ if(isset($_POST['FEED_USER']) && isset($_POST['FEED_PASS']) && isset($_POST['FEE
                     ?>
                 </select>
             </td>
-            <td> or <input type="text" name="<?php echo str_replace( "ATTRIBUTES","FIELD",$key ).'_3';?>" style="margin-left: 2px; width: 130px;" value="<?php echo $feedifyConfig->getConfig(str_replace( "ATTRIBUTES","FIELD",$key ).'_3');?>"></td>
+            <td> or <input type="text" name="<?php echo $key.'_3';?>" style="margin-left: 2px; width: 130px;" value="<?php echo $feedifyConfig->getConfig($key.'_3');?>"></td>
         </tr>
     <?php } ?>
 
